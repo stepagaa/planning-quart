@@ -520,25 +520,6 @@ function buildTestData(){
   return ov;
 }
 
-// ── Export/Import ──
-function exportJSON(ov,name){
-  const blob=new Blob([JSON.stringify({agent:name,data:ov},null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='planning-'+name+'-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();URL.revokeObjectURL(url);
-}
-function importJSON(cb){
-  const inp=document.createElement('input');
-  inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{
-    const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{try{const p=JSON.parse(ev.target.result);cb(p.data||p);}catch{alert('Fichier JSON invalide');}};
-    r.readAsText(f);
-  };
-  inp.click();
-}
 
 // ── IscDetail ──
 function IscDetail({isc,hs,view,onClose,hideEuros}){
@@ -601,7 +582,6 @@ function PlanningView({storageKey,sheetProfile,agentName,hideEuros,testMode,onBa
   const [picker,setPicker]=useState(false);
   const [iscDetail,setIscDetail]=useState(false);
   const [loaded,setLoaded]=useState(false);
-  const [showExport,setShowExport]=useState(false);
   const [syncStatus,setSyncStatus]=useState('');
 
   useEffect(()=>{
@@ -660,7 +640,7 @@ function PlanningView({storageKey,sheetProfile,agentName,hideEuros,testMode,onBa
 
   const totalH=Math.round((isc.total+hs)*100)/100;
 
-  return h('div',{className:'root',onClick:()=>setShowExport(false)},
+  return h('div',{className:'root'},
     // Barre retour
     h('div',{className:'back-bar'},
       h('button',{className:'back-btn',onClick:onBack},'‹ Accueil'),
@@ -725,24 +705,6 @@ function PlanningView({storageKey,sheetProfile,agentName,hideEuros,testMode,onBa
           ),
           !hideEuros&&h('div',{style:{fontSize:'.7rem',color:'#475569',marginTop:'3px'}},(totalH*19.85).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €')
         )
-      )
-    ),
-    // Bouton Export (sauf mode test)
-    !testMode&&h('div',{style:{padding:'10px 2px 0',position:'relative'}},
-      h('button',{
-        style:{width:'100%',padding:'10px',borderRadius:'10px',border:'1px solid #2d3139',background:'#1a1d24',color:'#8b949e',fontFamily:'Inter,sans-serif',fontSize:'.72rem',fontWeight:600,cursor:'pointer',WebkitTapHighlightColor:'transparent'},
-        onClick:e=>{e.stopPropagation();setShowExport(p=>!p);}
-      },'↑ Export'),
-      showExport&&h('div',{style:{position:'absolute',bottom:'calc(100% + 4px)',left:0,right:0,background:'#1a1d24',border:'1px solid #2d3139',borderRadius:'10px',overflow:'hidden',zIndex:100,boxShadow:'0 -4px 20px rgba(0,0,0,.5)'}},
-        h('div',{style:{padding:'11px 14px',fontSize:'.72rem',fontWeight:500,color:'#cbd5e1',cursor:'pointer',borderBottom:'1px solid #21262d',WebkitTapHighlightColor:'transparent'},
-          onClick:e=>{e.stopPropagation();exportJSON(ov,agentName||'moi');setShowExport(false);}
-        },'📥 Exporter JSON'),
-        h('div',{style:{padding:'11px 14px',fontSize:'.72rem',fontWeight:500,color:'#cbd5e1',cursor:'pointer',borderBottom:'1px solid #21262d',WebkitTapHighlightColor:'transparent'},
-          onClick:e=>{e.stopPropagation();importJSON(data=>{persist(data);});setShowExport(false);}
-        },'📤 Importer JSON'),
-        h('div',{style:{padding:'11px 14px',fontSize:'.72rem',fontWeight:500,color:'#cbd5e1',cursor:'pointer',WebkitTapHighlightColor:'transparent'},
-          onClick:e=>{e.stopPropagation();window.print();setShowExport(false);}
-        },'🖨️ Exporter PDF')
       )
     ),
     modal&&h(Modal,{modal,ov,onSave:save,onClose:()=>setModal(null)}),
