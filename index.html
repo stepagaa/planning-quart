@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="Mon Planning"/>
-  <title>Mon Planning</title>
+  <meta name="apple-mobile-web-app-title" content="Planning v2"/>
+  <title>Planning v2</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -31,27 +31,21 @@
     .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px}
     .dh{text-align:center;font-size:.58rem;font-weight:600;color:#5b626e;padding:2px 0;letter-spacing:.08em;text-transform:uppercase}
     .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-    .cell{border-radius:12px;padding:6px 4px 8px;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;background:#141519;transition:background .15s;min-height:72px;border:1px solid transparent;overflow:visible;-webkit-tap-highlight-color:transparent}
-    .cell:active{background:#1c1e24}
+    .cell{border-radius:4px;padding:20px 0 7px;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:#1c2027;transition:background .15s;min-height:80px;border:1px solid #2a2f39;overflow:visible;-webkit-tap-highlight-color:transparent}
+    .track{position:relative;width:100%;height:25px;flex-shrink:0}
+    .track-pill{position:absolute;top:0;height:25px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;z-index:2;letter-spacing:.01em}
+    .run-lbl{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;letter-spacing:.01em;pointer-events:none;z-index:3}
+    .cell-frame{position:absolute;top:0;bottom:0;box-sizing:border-box;pointer-events:none;z-index:4}
+    .cell:active{background:#252b34}
     .cell.out{opacity:.12;cursor:default;pointer-events:none}
     .cell.today{border-color:transparent}
-    .cell.today::after{content:"";position:absolute;inset:0;border-radius:12px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.7);pointer-events:none;z-index:10}
-    .cell.ferie{background:#1d1316}.cell.ferie:active{background:#241619}
-    .cell.weekend{background:#0f1014}
-    .dn{font-size:.66rem;font-weight:500;color:#5b626e;line-height:1;align-self:flex-start;padding-left:3px}
-    .cell.today .dn{color:#f1f5f9;font-weight:700}
+    .cell.ferie{background:#2a1820}.cell.ferie:active{background:#321c26}
+    .cell.weekend{background:#161a20}
+    .dn{position:absolute;top:5px;left:7px;font-size:.66rem;font-weight:600;color:#8b93a1;line-height:1;z-index:5}
+    .cell.today .dn{color:#0a0b0d;background:#fff;border-radius:4px;padding:2px 6px;top:3px;left:4px;font-weight:800}
     .cell.ferie .dn{color:#f87171;font-weight:600}
     .badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;letter-spacing:.01em;flex-shrink:0;line-height:1}
-    .badge-tr{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;line-height:1;position:absolute;top:5px;right:5px}
-    .pill-wrap{position:relative;width:34px;height:34px;flex-shrink:0}
-    .pill-abs{position:absolute;top:0;height:34px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;z-index:2}
-    .repl-lbl{position:absolute;bottom:6px;left:6px;right:6px;text-align:center;font-size:.44rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:3px;padding:2px 0}
-    .cell.absent-bg{background:#0e7490}
-    .cell.absent-bg:hover{background:#0891b2}
-    .cell.event-bg{background:var(--ev-bg)}
-    .ev-lbl{position:absolute;bottom:6px;left:4px;right:4px;text-align:center;font-size:.44rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:3px;padding:2px 0}
     .note{font-size:.42rem;color:#6b7280;line-height:1.2;word-break:break-word;text-align:center;padding:0 2px}
-    .note-change{font-size:.42rem;color:#8b949e;line-height:1.2;word-break:break-word;text-align:center;padding:0 2px;position:absolute;bottom:22px;left:4px;right:4px}
     .stats{margin-top:20px;padding:0 2px}
     .stats-title{font-size:.6rem;font-weight:600;color:#475569;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
     .stat-card{background:#141519;border:1px solid #23262e;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
@@ -74,7 +68,7 @@
     .tpill.on-rah{border-color:#374151;background:#15171c;color:#9ca3af}
     .qopts{display:flex;gap:6px;margin-top:8px}
     .qopt{flex:1;padding:9px 4px;border-radius:11px;border:1px solid #23262e;background:#0e0f12;font-family:'Inter',sans-serif;font-size:.65rem;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;color:#8b919c;-webkit-tap-highlight-color:transparent}
-    .mnote{width:100%;background:#0e0f12;border:1px solid #23262e;border-radius:12px;color:#f1f5f9;padding:10px 12px;font-family:'Inter',sans-serif;font-size:.72rem;outline:none;resize:none;height:54px;margin-top:2px;transition:border-color .15s}
+    .mnote{width:100%;background:#0e0f12;border:1px solid #23262e;border-radius:12px;color:#f1f5f9;padding:10px 12px;font-family:'Inter',sans-serif;font-size:16px;outline:none;resize:none;height:60px;margin-top:2px;transition:border-color .15s}
     .mnote:focus{border-color:#3b4250}.mnote::placeholder{color:#475569}
     .mact{display:flex;gap:8px;margin-top:18px}
     .bsave{flex:1;background:#2563eb;color:#fff;border:none;border-radius:12px;padding:12px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:600;transition:background .15s;-webkit-tap-highlight-color:transparent}
@@ -146,223 +140,195 @@ const EVENTS={
 };
 // Absent badge: bleu ciel avec "CA"
 const ABSENT_BADGE={bg:"#0891b2",col:"#fff",lbl:"CA",fs:".65rem"};
-// ISC heures par quart et type de jour (dernière ligne du tableau)
-// clé: shift (M/APM/N) + dayType (sem/sam/dim)
-const ISC={
-  M:  {sem:0.75, sam:2.7,  dim:3.375},
-  APM:{sem:0.875,sam:3.2,  dim:4},
-  N:  {sem:4,    sam:4.6,  dim:4.4},
-  RAH:{sem:0,    sam:0,    dim:0},
-  RH: {sem:0,    sam:0,    dim:0},
-  E:  {sem:0,    sam:0,    dim:0},
-  "E/":{sem:0,   sam:0,    dim:0},
+// ============ MOTEUR DE CALCUL — VERSION 2 (par plages horaires) ============
+// Plages : jour 06:00–20:00, nuit 20:00–06:00. Chaque heure évaluée selon sa date réelle.
+const ISC_RATE={
+  jour:{sem:0.10, sam:0.40, dim:0.50},
+  nuit:{sem:0.40, sam:0.40, dim:0.50},
 };
+const HS_RATE={
+  jour:{sem:1.50, sam:1.75, dim:1.75},
+  nuit:{sem:2.00, sam:2.25, dim:2.25},
+};
+const FERIE_IND={jour:1.75, nuit:2.25};
+const IND_REMPL={M:1.5, APM:1.75, N:2};
+const DUREE={M:6.75, APM:8, N:10};
 
-function getDayType(d,feries){
-  const k=dkey(d);
-  if(feries.has(k))return'dim'; // JF = dimanche
-  const dow=d.getDay();
-  if(dow===0)return'dim';
-  if(dow===6)return'sam';
-  return'sem';
+// Dates de référence pour le décalage ISC remplacement
+const REF_SEM=new Date(2025,0,8);  // mercredi
+const REF_SAM=new Date(2025,0,4);  // samedi
+const REF_DIM=new Date(2025,0,5);  // dimanche
+const NO_FERIES=new Set();
+
+function shiftInterval(d, shift){
+  const s=new Date(d), e=new Date(d);
+  if(shift==='M'){ s.setHours(5,45,0,0); e.setHours(12,30,0,0); }
+  else if(shift==='APM'){ s.setHours(12,15,0,0); e.setHours(20,15,0,0); }
+  else if(shift==='N'){ s.setHours(20,0,0,0); e.setHours(6,0,0,0); e.setDate(e.getDate()+1); }
+  else return null;
+  return {start:s, end:e};
 }
 
-// Type de jour pour remplacement: sem→sam, sam→dim, dim→dim
-function getDayTypeRepl(d,feries){
-  const dt=getDayType(d,feries);
-  if(dt==='sem')return'sam';
-  return'dim'; // sam→dim, dim→dim
-}
-
-function calcISC(view,ov,allFeries){
-  const last=new Date(view.y,view.m+1,0);
-  let totalTh=0, totalRepl=0;
-  const JLBL=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  for(let day=1;day<=last.getDate();day++){
-    const d=new Date(view.y,view.m,day);
-    const key=dkey(d);
-    const o=ov[key];
-    if(o&&o.absent)continue;
-    const thShift=(o&&o.manShift)||getShift(d);
-    const isc=ISC[thShift];
-    if(!isc)continue;
-    const dt=getDayType(d,allFeries);
-    const hTh=isc[dt];
-    if(hTh>0)totalTh+=hTh;
-    // Remplacement: ISC du quart de remplacement avec dayType décalé
-    if(o&&o.repl&&REPL[o.repl]){
-      const replShift=o.repl;
-      const iscR=ISC[replShift];
-      if(iscR){
-        const dtR=getDayTypeRepl(d,allFeries);
-        const hR=iscR[dtR];
-        if(hR>0)totalRepl+=hR;
-      }
-    }
+// Découpe un intervalle aux frontières 06:00 / 20:00 / minuit → segments {hours, band, date}
+function workSegments(start, end){
+  const segs=[]; let cur=new Date(start);
+  while(cur<end){
+    const h=cur.getHours();
+    const b=new Date(cur);
+    if(h<6) b.setHours(6,0,0,0);
+    else if(h<20) b.setHours(20,0,0,0);
+    else { b.setHours(0,0,0,0); b.setDate(b.getDate()+1); }
+    const segEnd = b<end ? b : end;
+    const hours=(segEnd-cur)/3600000;
+    if(hours>0) segs.push({hours, band:(h<6||h>=20)?'nuit':'jour', date:new Date(cur)});
+    cur=segEnd;
   }
-  const total=Math.round((totalTh+totalRepl)*100)/100;
-  return{
-    total,
-    th:Math.round(totalTh*100)/100,
-    repl:Math.round(totalRepl*100)/100,
+  return segs;
+}
+
+function dateType(d, feries){
+  if(feries.has(dkey(d))) return 'dim';
+  const dow=d.getDay();
+  if(dow===0) return 'dim';
+  if(dow===6) return 'sam';
+  return 'sem';
+}
+
+// ISC théorique d'un quart travaillé
+function iscShiftBands(d, shift, feries){
+  const iv=shiftInterval(d, shift); if(!iv) return 0;
+  let t=0;
+  for(const sg of workSegments(iv.start, iv.end)) t += sg.hours * ISC_RATE[sg.band][dateType(sg.date, feries)];
+  return t;
+}
+
+// ISC remplacement : décalage d'un cran (sem→sam, sam→dim, dim→dim) via date de référence
+function bumpRef(d, feries){
+  const dt=dateType(d, feries);
+  if(dt==='sem') return REF_SAM;
+  return REF_DIM;
+}
+function iscRemplBands(d, replShift, feries){
+  return iscShiftBands(bumpRef(d, feries), replShift, NO_FERIES);
+}
+
+// HS d'un quart (remplacement), par plages, type réel
+function hsShiftBands(d, shift, feries){
+  const iv=shiftInterval(d, shift); if(!iv) return 0;
+  let t=0;
+  for(const sg of workSegments(iv.start, iv.end)) t += sg.hours * HS_RATE[sg.band][dateType(sg.date, feries)];
+  return t;
+}
+
+// Indemnité férié (quart théorique travaillé) : heures tombant sur un férié
+function indemniteFerie(d, shift, feries){
+  const iv=shiftInterval(d, shift); if(!iv) return 0;
+  let t=0;
+  for(const sg of workSegments(iv.start, iv.end)) if(feries.has(dkey(sg.date))) t += sg.hours * FERIE_IND[sg.band];
+  return t;
+}
+
+// Quart effectivement travaillé un jour (remplacement prioritaire, sinon quart théo M/APM/N)
+function effShift(d, ov){
+  const o=ov[dkey(d)];
+  if(o&&o.absent) return null;
+  if(o&&o.repl) return o.repl;
+  const theo=(o&&o.manShift)||getShift(d);
+  return (theo==='M'||theo==='APM'||theo==='N')?theo:null;
+}
+
+// Heures réellement travaillées sur la journée D (00:00–24:00), queue de nuit de la veille incluse
+function workedHoursOnDate(D, ov){
+  const dayStart=new Date(D); dayStart.setHours(0,0,0,0);
+  const dayEnd=new Date(dayStart); dayEnd.setDate(dayEnd.getDate()+1);
+  let t=0;
+  [addDays(D,-1), D].forEach(day=>{
+    const sh=effShift(day, ov); if(!sh) return;
+    const iv=shiftInterval(day, sh); if(!iv) return;
+    const a=Math.max(iv.start, dayStart), b=Math.min(iv.end, dayEnd);
+    if(b>a) t += (b-a)/3600000;
+  });
+  return t;
+}
+
+// Détail d'un jour : toutes les composantes
+function calcDay(d, ov, feries){
+  const o=ov[dkey(d)];
+  const res={iscTh:0, iscRe:0, hs:0, indRempl:0, indFerie:0, credit:0, sup:0, ca:0};
+  if(o&&o.absent){ res.ca=(DUREE[getShift(d)]||0); return res; }
+  const theo=(o&&o.manShift)||getShift(d);
+  const isFerie=feries.has(dkey(d));
+  const is1Mai=dkey(d).endsWith('-05-01');
+  const theoWorked=(theo==='M'||theo==='APM'||theo==='N');
+  const theoRepos=(theo==='RAH'||theo==='RH');
+
+  if(theoWorked) res.iscTh += iscShiftBands(d, theo, feries);
+  if(isFerie && theoWorked) res.indFerie += indemniteFerie(d, theo, feries);
+
+  if(o&&o.repl){
+    res.iscRe += iscRemplBands(d, o.repl, feries);
+    res.hs += hsShiftBands(d, o.repl, feries);
+    res.indRempl += (IND_REMPL[o.repl]||0);
+  }
+
+  if(o&&o.event==='formation' && theoRepos){
+    res.hs += 7 * HS_RATE.jour[dateType(d, feries)];
+  }
+
+  if(isFerie){
+    if(theoRepos){ res.credit += 7; if(o&&o.repl) res.credit += workedHoursOnDate(d, ov); }
+    else if(theoWorked){ res.credit += workedHoursOnDate(d, ov); }
+  }
+
+  if(is1Mai){
+    let w=workedHoursOnDate(d, ov);
+    if(o&&o.event==='formation'&&theoRepos) w+=7;
+    res.sup += w;
+  }
+  return res;
+}
+
+function calcMonth(view, ov, feries){
+  const last=new Date(view.y, view.m+1, 0);
+  let iscTh=0,iscRe=0,hs=0,indRempl=0,indFerie=0,credit=0,sup=0,ca=0;
+  for(let day=1; day<=last.getDate(); day++){
+    const x=calcDay(new Date(view.y,view.m,day), ov, feries);
+    iscTh+=x.iscTh; iscRe+=x.iscRe; hs+=x.hs; indRempl+=x.indRempl; indFerie+=x.indFerie; credit+=x.credit; sup+=x.sup; ca+=x.ca;
+  }
+  const r=v=>Math.round(v*100)/100;
+  const iscTotal=r(iscTh+iscRe), indTotal=r(indRempl+indFerie+credit+sup);
+  return {
+    isc:{total:iscTotal, th:r(iscTh), repl:r(iscRe)},
+    hs:r(hs),
+    ind:{total:indTotal, rempl:r(indRempl), ferie:r(indFerie), credit:r(credit), sup:r(sup)},
+    ca:r(ca),
+    total:r(iscTotal+hs+indTotal),
   };
 }
 
-// Heures supplémentaires par quart théorique × quart effectué
-// Colonnes: M, APM, N_J, N_V, N_RAH, N_RH
-// Valeurs = TOTAL tableau - ISC tableau
-const HS_TABLE={
-  RAH:{M:7,    APM:9,    N_J:16,  N_V:16,  N_RAH:16,  N_RH:17},
-  RH: {M:14,   APM:16,   N_J:23,  N_V:23,  N_RAH:23,  N_RH:25},
-  E:  {M:1.38, APM:3,    N_J:12.5,N_V:12.5,N_RAH:12.5,N_RH:0},  // J
-  "E/":{M:4,   APM:8,    N_J:16,  N_V:0,   N_RAH:0,   N_RH:17}, // V
-};
-
-// Détermine la colonne HS pour un remplacement nuit
-function getNightCol(d,ov,feries){
-  // Regarder le quart du jour suivant
-  const next=addDays(d,1);
-  const oNext=ov[dkey(next)];
-  const nextShift=(oNext&&oNext.manShift)||getShift(next);
-  if(nextShift==='E')return'N_J';
-  if(nextShift==='E/')return'N_V';
-  if(nextShift==='RAH')return'N_RAH';
-  if(nextShift==='RH')return'N_RH';
-  // Si pas de tableau pour ce suivant → N_RAH par défaut
-  return'N_RAH';
+// Wrappers compatibles affichage
+function calcISC(view, ov, feries){ return calcMonth(view, ov, feries).isc; }
+function calcHS(view, ov, feries){ return calcMonth(view, ov, feries).hs; }
+function calcInd(view, ov, feries){ return calcMonth(view, ov, feries).ind; }
+function calcCA(view, ov){
+  const f=new Set([...getFeries(view.y-1),...getFeries(view.y),...getFeries(view.y+1)]);
+  return calcMonth(view, ov, f).ca;
 }
 
-// Nuit col: 1=soir seulement, 2=nuit complète sur JF, 3=fin de nuit seulement
-function getNuitFerieCol(shift, prevShift){
-  if(shift==='N'&&prevShift!=='N')return 1;  // 20h-00h seulement
-  if(shift==='N'&&prevShift==='N')return 2;  // nuit complète
-  if(shift!=='N'&&prevShift==='N')return 3;  // 00h-06h seulement
-  return 0;
-}
-
-// HS tableau JF par quart et colonne nuit (valeurs = Total - ISC)
-const HS_FERIE={
-  M:   {normal:15.1875, premier_mai:21.9375},
-  APM: {normal:18,      premier_mai:26},
-  N1:  {normal:9,       premier_mai:13},   // nuit col.1
-  N2:  {normal:22.5,    premier_mai:33.5}, // nuit col.2
-  N3:  {normal:13.5,    premier_mai:19.5}, // nuit col.3
-};
-
-// Heures travaillées sur un JF : retourne {hsTh, hsFerie, isc, nuitCol}
-function hsJourFerieDetail(d, ov, allFeries){
-  const o=ov[dkey(d)];
-  const shift=(o&&o.manShift)||getShift(d);
-  const prev=addDays(d,-1);
-  const oPrev=ov[dkey(prev)];
-  const prevAbsent=oPrev&&oPrev.absent;
-  const prevShift=(oPrev&&oPrev.manShift)||getShift(prev);
-  // Si la veille est en nuit mais marquée absente, pas de fin de nuit → traiter comme pas de nuit
-  const prevShiftEff=(prevShift==='N'&&prevAbsent)?'RAH':prevShift;
-  const nuitCol=getNuitFerieCol(shift, prevShiftEff);
-  const isPremierMai=dkey(d).endsWith('-05-01');
-
-  // Heures théoriques travaillées (hsTh) — ce que hsJourFerie retournait avant
-  let hsTh=0;
-  if(shift==='RAH'||shift==='RH') hsTh=nuitCol===3?6:7;
-  else if(shift==='M')  hsTh=6.75+(nuitCol===3?6:0);
-  else if(shift==='APM')hsTh=8+(nuitCol===3?6:0);
-  else if(shift==='N')  hsTh=4+(nuitCol===3?6:0);
-  else hsTh=(nuitCol===3?6:0);
-
-  // ISC théorique du jour
-  const dayType=getDayType(d,allFeries);
-  const iscVal=(ISC[shift]&&ISC[shift][dayType])||0;
-
-  // HS tableau JF (déjà net des ISC)
-  let hsFerie=0;
-  if(shift==='RAH'||shift==='RH'){
-    hsFerie=0; // RAH/RH : pas de HS JF
-  } else {
-    const col=shift==='M'?'M':shift==='APM'?'APM':nuitCol===1?'N1':nuitCol===2?'N2':nuitCol===3?'N3':null;
-    if(col){
-      const row=HS_FERIE[col];
-      hsFerie=isPremierMai?row.premier_mai:row.normal;
-    }
-  }
-
-  return {hsTh, hsFerie, isc:iscVal, nuitCol, isPremierMai, shift};
-}
-
-// Heures travaillées sur un JF pour le calcul HS global
-function hsJourFerie(d, ov, allFeries){
-  const detail=hsJourFerieDetail(d,ov,allFeries);
-  return detail.hsTh;
-}
-
-function calcHS(view,ov,allFeries){
-  const last=new Date(view.y,view.m+1,0);
-  let total=0;
-  for(let day=1;day<=last.getDate();day++){
-    const d=new Date(view.y,view.m,day);
-    const key=dkey(d);
-    const o=ov[key];
-
-    // Jour férié dans quart théorique (pas de remplacement, pas absent)
-    if(allFeries.has(key)&&!(o&&o.repl)&&!(o&&o.absent)){
-      const detail=hsJourFerieDetail(d,ov,allFeries);
-      const h=detail.hsTh+detail.hsFerie;
-      if(h>0){total+=h;continue;}
-    }
-
-    // Formation sur RAH → 10.5h HS
-    if(o&&o.event==='formation'){
-      const thShift=(o.manShift)||getShift(d);
-      if(thShift==='RAH'){total+=10.5;} continue;
-    }
-    if(!o||!o.repl)continue; // HS uniquement sur remplacements
-    const thShift=(o.manShift)||getShift(d);
-    const hsRow=HS_TABLE[thShift];
-    if(!hsRow)continue;
-    const replShift=o.repl;
-    let col;
-    if(replShift==='M')col='M';
-    else if(replShift==='APM')col='APM';
-    else if(replShift==='N')col=getNightCol(d,ov,allFeries);
-    else continue;
-    const hs=hsRow[col]||0;
-    if(hs>0)total+=hs;
-  }
-  return Math.round(total*100)/100;
-}
-
-function calcCA(view,ov){
-  const DUREE={M:6.75,APM:8,N:10,RAH:0,RH:0,'E':0,'E/':0};
-  const last=new Date(view.y,view.m+1,0);
-  let total=0;
-  for(let day=1;day<=last.getDate();day++){
-    const d=new Date(view.y,view.m,day);
-    const o=ov[dkey(d)];
-    if(!o||!o.absent)continue;
-    const shift=getShift(d);
-    total+=(DUREE[shift]||0);
-  }
-  return Math.round(total*100)/100;
-}
-
-function calcAnnuel(year,ov){
+function calcAnnuel(year, ov){
   const allF=new Set([...getFeries(year-1),...getFeries(year),...getFeries(year+1)]);
-  let isc={total:0,th:0,repl:0},hs=0,ca=0;
+  const r=v=>Math.round(v*100)/100;
+  let isc={total:0,th:0,repl:0}, hs=0, ind={total:0,rempl:0,ferie:0,credit:0,sup:0}, ca=0;
   const months=[];
   for(let m=0;m<12;m++){
-    const v={y:year,m};
-    const mi=calcISC(v,ov,allF);
-    const mh=calcHS(v,ov,allF)||0;
-    const mc=calcCA(v,ov);
-    const tot=Math.round((mi.total+mh)*100)/100;
-    months.push({m,isc:mi,hs:mh,ca:mc,total:tot});
-    isc.total=Math.round((isc.total+mi.total)*100)/100;
-    isc.th=Math.round((isc.th+mi.th)*100)/100;
-    isc.repl=Math.round((isc.repl+mi.repl)*100)/100;
-    hs=Math.round((hs+mh)*100)/100;
-    ca=Math.round((ca+mc)*100)/100;
+    const mm=calcMonth({y:year,m}, ov, allF);
+    months.push({m, isc:mm.isc, hs:mm.hs, ind:mm.ind, ca:mm.ca, total:mm.total});
+    isc.total=r(isc.total+mm.isc.total); isc.th=r(isc.th+mm.isc.th); isc.repl=r(isc.repl+mm.isc.repl);
+    hs=r(hs+mm.hs);
+    ind.total=r(ind.total+mm.ind.total); ind.rempl=r(ind.rempl+mm.ind.rempl); ind.ferie=r(ind.ferie+mm.ind.ferie); ind.credit=r(ind.credit+mm.ind.credit); ind.sup=r(ind.sup+mm.ind.sup);
+    ca=r(ca+mm.ca);
   }
-  return{isc,hs,ca,months,total:Math.round((isc.total+hs)*100)/100};
+  return {isc, hs, ind, ca, months, total:r(isc.total+hs+ind.total)};
 }
 
 const MOIS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -376,6 +342,17 @@ function cyclePos(d){return((Math.round((d-REF)/86400000)%42)+42)%42;}
 function isRahConvertible(d){const p=cyclePos(d);return p===38||p===39;}
 function isJConvertible(d){const p=cyclePos(d);return p===33||p===34;}
 function isVConvertible(d){const p=cyclePos(d);return p===35;}
+
+// Couleurs : utilitaires pour la hachure du quart théorique remplacé
+function hexRgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function darken(h,f){const[r,g,b]=hexRgb(h);return'rgb('+Math.round(r*f)+','+Math.round(g*f)+','+Math.round(b*f)+')';}
+function hatch(h){return'repeating-linear-gradient(45deg,'+h+' 0 5px,'+darken(h,0.42)+' 5px 10px)';}
+function lum(h){const[r,g,b]=hexRgb(h);return(0.299*r+0.587*g+0.114*b)/255;}
+function borderCol(h){return lum(h)>0.6?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.5)';}
+// Contour sur le pourtour de la barre, sans trait interne entre jours fusionnés
+function pillBorder(h,jl,jr){const c=borderCol(h);return{borderTop:'1px solid '+c,borderBottom:'1px solid '+c,borderLeft:jl?'0':'1px solid '+c,borderRight:jr?'0':'1px solid '+c};}
+// Cadre coloré de case (même géométrie que les pills, bordures internes supprimées)
+function frameSides(c,jl,jr){return{borderTop:'2px solid '+c,borderBottom:'2px solid '+c,borderLeft:jl?'0':'2px solid '+c,borderRight:jr?'0':'2px solid '+c};}
 
 // ── Picker ──
 function Picker({view,onSelect,onClose}){
@@ -410,37 +387,16 @@ function Modal({modal,ov,onSave,onClose}){
   const dl=modal.date.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const es=SHIFT[manShift||raw]||s;
   const tog=t=>setManShift(p=>p===t?null:t);
-  // ISC de ce jour (quart théorique, CA=0)
+  // Aperçu en direct via le moteur de calcul, sur un brouillon du jour
   const modalFeries=new Set([...getFeries(modal.date.getFullYear()-1),...getFeries(modal.date.getFullYear()),...getFeries(modal.date.getFullYear()+1)]);
-  const iscShift=absent?null:(manShift||raw);
-  const iscVal=iscShift&&ISC[iscShift]?ISC[iscShift][getDayType(modal.date,modalFeries)]:0;
-  // HS de ce jour si remplacement
-  const hsVal=(()=>{
-    // Formation sur RAH
-    if(event==='formation'&&(manShift||raw)==='RAH')return 10.5;
-    if(!repl)return 0;
-    const thShift=manShift||raw;
-    const hsRow=HS_TABLE[thShift];
-    if(!hsRow)return 0;
-    let col;
-    if(repl==='M')col='M';
-    else if(repl==='APM')col='APM';
-    else if(repl==='N')col=getNightCol(modal.date,ex?{[dkey(modal.date)]:ex}:{},modalFeries);
-    else return 0;
-    return hsRow[col]||0;
-  })();
-  // HS jour férié théorique
-  const isFerie=modalFeries.has(dkey(modal.date));
-  const ferieDetail=isFerie&&!repl&&!absent?hsJourFerieDetail(modal.date,ov,modalFeries):null;
-  const hsFerieVal=ferieDetail?ferieDetail.hsFerie:0;
-
-  // ISC du remplacement
-  const iscReplVal=(()=>{
-    if(!repl||!REPL[repl])return 0;
-    const iscR=ISC[repl];
-    if(!iscR)return 0;
-    return iscR[getDayTypeRepl(modal.date,modalFeries)];
-  })();
+  const draft={};
+  if(absent)draft.absent=true;
+  if(event)draft.event=event;
+  if(repl)draft.repl=repl;
+  if(manShift)draft.manShift=manShift;
+  const tempOv={...ov};
+  if(Object.keys(draft).length)tempOv[key]=draft; else delete tempOv[key];
+  const dd=calcDay(modal.date, tempOv, modalFeries);
   const showDays=absent||(event==='formation');
   const save=()=>{
     const data={};
@@ -460,27 +416,20 @@ function Modal({modal,ov,onSave,onClose}){
           h('div',{className:'mdate'},dl),
           h('div',{className:'mshift'},es.label)
         ),
-        h('div',{style:{flexShrink:0,display:'flex',flexDirection:'column',gap:'5px',justifyContent:'center'}},
-          iscVal>0&&h('div',{style:{display:'flex',alignItems:'baseline',gap:'5px'}},
-            h('span',{style:{fontSize:'.72rem',fontWeight:600,color:'#fff'}},'ISC'),
-            h('span',{style:{fontSize:'1.05rem',fontWeight:700,color:'#f1f5f9'}},iscVal.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})),
-            h('span',{style:{fontSize:'.6rem',color:'#6b7280'}},'h')
-          ),
-          repl&&iscReplVal>0&&h('div',{style:{display:'flex',alignItems:'baseline',gap:'5px'}},
-            h('span',{style:{fontSize:'.72rem',fontWeight:600,color:'#fff'}},'ISC'),
-            h('span',{style:{fontSize:'1.05rem',fontWeight:700,color:'#60a5fa'}},iscReplVal.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})),
-            h('span',{style:{fontSize:'.6rem',color:'#6b7280'}},'h')
-          ),
-          hsVal>0&&h('div',{style:{display:'flex',alignItems:'baseline',gap:'5px'}},
-            h('span',{style:{fontSize:'.72rem',fontWeight:600,color:'#fff'}},'HS'),
-            h('span',{style:{fontSize:'1.05rem',fontWeight:700,color:'#34d399'}},hsVal.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})),
-            h('span',{style:{fontSize:'.6rem',color:'#6b7280'}},'h')
-          ),
-          hsFerieVal>0&&h('div',{style:{display:'flex',alignItems:'baseline',gap:'5px'}},
-            h('span',{style:{fontSize:'.72rem',fontWeight:600,color:'#fff'}},'HS JF'),
-            h('span',{style:{fontSize:'1.05rem',fontWeight:700,color:'#fb923c'}},hsFerieVal.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})),
-            h('span',{style:{fontSize:'.6rem',color:'#6b7280'}},'h')
-          )
+        h('div',{style:{flexShrink:0,textAlign:'right'}},
+          (()=>{
+            const f2=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+            const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+dd.indFerie+dd.credit+dd.sup)*100)/100;
+            const iscPart=Math.round((dd.iscTh+dd.iscRe)*100)/100;
+            if(tot<=0) return null;
+            return h(Fragment,null,
+              h('div',{style:{display:'flex',alignItems:'baseline',gap:'4px',justifyContent:'flex-end'}},
+                h('span',{style:{fontSize:'1.7rem',fontWeight:700,color:'#f1f5f9'}},f2(tot)),
+                h('span',{style:{fontSize:'.7rem',color:'#64748b'}},'h')
+              ),
+              iscPart>0&&h('div',{style:{fontSize:'.72rem',color:'#94a3b8',marginTop:'1px'}},'dont '+f2(iscPart)+' ISC')
+            );
+          })()
         )
       ),
       h('div',{className:'msec'},
@@ -565,15 +514,15 @@ async function syncPush(agent,ov){
 
 // ── App ──
 const TABS=[
-  {id:'paga',   label:'Paga',     key:'quart-v2',          isPaga:true,  color:'#3b82f6', bg:'#0d1730', border:'#1d4ed8'},
-  {id:'fort',   label:'Fort',     key:'quart-v2-fort',     isPaga:false, color:'#8b5cf6', bg:'#16102c', border:'#6d28d9'},
-  {id:'serp',   label:'Serpaggi', key:'quart-v2-serp',     isPaga:false, color:'#10b981', bg:'#062a1e', border:'#047857'},
-  {id:'matt',   label:'Matteoni', key:'quart-v2-matt',     isPaga:false, color:'#f59e0b', bg:'#291a04', border:'#b45309'},
-  {id:'cesa',   label:'Cesari',   key:'quart-v2-cesa',     isPaga:false, color:'#f43f5e', bg:'#290c13', border:'#be123c'},
+  {id:'paga2', label:'Paga',     key:'quart-calc2',       isPaga:true,  color:'#3b82f6', bg:'#0d1730', border:'#1d4ed8'},
+  {id:'fort2', label:'Fort',     key:'quart-calc2-fort',  isPaga:false, color:'#8b5cf6', bg:'#16102c', border:'#6d28d9'},
+  {id:'serp2', label:'Serpaggi', key:'quart-calc2-serp',  isPaga:false, color:'#10b981', bg:'#062a1e', border:'#047857'},
+  {id:'matt2', label:'Matteoni', key:'quart-calc2-matt',  isPaga:false, color:'#f59e0b', bg:'#291a04', border:'#b45309'},
+  {id:'cesa2', label:'Cesari',   key:'quart-calc2-cesa',  isPaga:false, color:'#f43f5e', bg:'#290c13', border:'#be123c'},
 ];
 
 function Root(){
-  const [activeTab,setActiveTab]=useState('paga');
+  const [activeTab,setActiveTab]=useState(TABS[0].id);
   const [bilanM,setBilanM]=useState(false);
   const [bilanA,setBilanA]=useState(false);
   const [allOv,setAllOv]=useState({});
@@ -709,9 +658,26 @@ function App({storageKey,agentId,isPaga,tabLabel,tabColor,onViewChange,onSynced,
   const off=first.getDay()===0?6:first.getDay()-1;
   const cells=Array.from({length:Math.ceil((off+new Date(view.y,view.m+1,0).getDate())/7)*7},(_,i)=>addDays(addDays(first,-off),i));
   const allFeries=new Set([...getFeries(view.y-1),...getFeries(view.y),...getFeries(view.y+1)]);
-  const isc=calcISC(view,ov,allFeries);
-  const hs=calcHS(view,ov,allFeries)||0;
-  const ca=calcCA(view,ov);
+  // Runs (séquences de quarts identiques sur une ligne) → texte affiché une seule fois, centré
+  const chgKeyOf=oo=>{ if(!oo)return null; if(oo.absent)return 'abs'; if(oo.repl)return 'repl:'+oo.repl; if(oo.event)return 'evt:'+oo.event; return null; };
+  const theoValAt=idx=>{const dd=cells[idx]; if(dd.getMonth()!==view.m)return null; const oo=ov[dkey(dd)]; return (oo&&oo.manShift)||getShift(dd);};
+  const chgValAt=idx=>{const dd=cells[idx]; if(dd.getMonth()!==view.m)return null; return chgKeyOf(ov[dkey(dd)]);};
+  const runStarts=valueOf=>{
+    const arr=new Array(cells.length).fill(0);
+    for(let r=0;r<cells.length;r+=7){
+      let c=r;
+      while(c<r+7){
+        const v=valueOf(c);
+        if(v==null){c++;continue;}
+        let e=c; while(e+1<r+7 && valueOf(e+1)===v) e++;
+        arr[c]=e-c+1; c=e+1;
+      }
+    }
+    return arr;
+  };
+  const theoRuns=runStarts(theoValAt), chgRuns=runStarts(chgValAt);
+  const month=calcMonth(view,ov,allFeries);
+  const isc=month.isc,hs=month.hs,ind=month.ind,ca=month.ca;
 
   const open=d=>{if(d.getMonth()!==view.m)return;setModal({date:d,shift:getShift(d)});};
   const save=(data,numDays)=>{
@@ -738,46 +704,68 @@ function App({storageKey,agentId,isPaga,tabLabel,tabColor,onViewChange,onSynced,
       h('button',{className:'nav',onClick:e=>{e.currentTarget.blur();goNext();}},'›')
     ),
     h('div',{className:'dow'},JOURS.map((j,i)=>h('div',{key:i,className:'dh'},j))),
-    h('div',{className:'grid',style:{borderRadius:'12px',outline:'2px solid '+(tabColor||'#2563eb')+'40',outlineOffset:'3px'}},
+    h('div',{className:'grid',style:{borderRadius:'8px',outline:'3px solid '+(tabColor||'#2563eb'),outlineOffset:'5px'}},
       cells.map((d,i)=>{
         const inM=d.getMonth()===view.m,key=dkey(d),raw=getShift(d),o=ov[key];
-        const effShift=(o&&o.manShift)||raw,s=SHIFT[effShift]||SHIFT.RAH;
         const isAbs=o&&o.absent,replMeta=(o&&o.repl)?REPL[o.repl]:null;
         const evKey=o&&o.event,evMeta=evKey?EVENTS[evKey]:null;
         const isToday=key===tk,isFerie=allFeries.has(key);
         const prevD=addDays(d,-1),nextD=addDays(d,1);
         const prevO=ov[dkey(prevD)],nextO=ov[dkey(nextD)];
-        const prevShift=(prevO&&prevO.manShift)||getShift(prevD);
-        const nextShift=(nextO&&nextO.manShift)||getShift(nextD);
-        const jL=inM&&!isAbs&&!evMeta&&!replMeta&&!(prevO&&(prevO.repl||prevO.absent||prevO.event))&&prevD.getMonth()===view.m&&prevShift===effShift;
-        const jR=inM&&!isAbs&&!evMeta&&!replMeta&&!(nextO&&(nextO.repl||nextO.absent||nextO.event))&&nextD.getMonth()===view.m&&nextShift===effShift;
-        const R='17px',F='0px';
-        const pr=jL&&jR?F+' '+F+' '+F+' '+F:jL?F+' '+R+' '+R+' '+F:jR?R+' '+F+' '+F+' '+R:R+' '+R+' '+R+' '+R;
-        const pL=jL?'calc(-50% - 1px)':'0',pRt=jR?'calc(-50% - 1px)':'0';
         const dow=d.getDay(),isWE=dow===0||dow===6;
         const cc='cell'+(!inM?' out':'')+(isToday?' today':'')+(isFerie&&inM?' ferie':isWE&&inM?' weekend':'');
-        // Badge-tr = badge du changement (repl/event/absent)
-        const trBadge=!inM?null
-          : replMeta ? {bg:replMeta.badge,col:replMeta.text,lbl:replMeta.short,fs:replMeta.short.length===1?'1rem':replMeta.short.length===2?'.65rem':'.48rem'}
-          : evMeta   ? {bg:evMeta.bg,col:evMeta.text,lbl:evMeta.short,fs:evMeta.short.length===1?'1rem':evMeta.short.length===2?'.72rem':'.5rem'}
-          : isAbs    ? ABSENT_BADGE
-          : null;
-        // Libellé bas encadré = quart théorique, uniquement pour repl/event/absent
-        const showLbl=inM&&(replMeta||evMeta||isAbs);
+
+        // Piste haute : quart théorique
+        const theoCode=(o&&o.manShift)||raw;
+        const theoMeta=SHIFT[theoCode]||SHIFT.RAH;
+        const theoL=(prevO&&prevO.manShift)||getShift(prevD);
+        const theoR=(nextO&&nextO.manShift)||getShift(nextD);
+
+        // Piste basse : changement (remplacement / événement / absence)
+        let chg=null;
+        if(inM){
+          if(isAbs)        chg={k:'abs',          bg:ABSENT_BADGE.bg, col:ABSENT_BADGE.col, short:ABSENT_BADGE.lbl};
+          else if(replMeta)chg={k:'repl:'+o.repl, bg:replMeta.badge,   col:replMeta.text,    short:replMeta.short};
+          else if(evMeta)  chg={k:'evt:'+evKey,   bg:evMeta.bg,        col:evMeta.text,      short:evMeta.short};
+        }
+        const chgKey=co=>{ if(!co)return null; if(co.absent)return 'abs'; if(co.repl)return 'repl:'+co.repl; if(co.event)return 'evt:'+co.event; return null; };
+        const chgL=chgKey(prevO), chgR=chgKey(nextO);
+
+        // Fusion (capsule) sur chaque piste
+        const tjL=inM&&prevD.getMonth()===view.m&&theoL===theoCode;
+        const tjR=inM&&nextD.getMonth()===view.m&&theoR===theoCode;
+        const cjL=inM&&chg&&prevD.getMonth()===view.m&&chgL===chg.k;
+        const cjR=inM&&chg&&nextD.getMonth()===view.m&&chgR===chg.k;
+
+        // Chevauchement + coins carrés côté fusion = barre parfaitement continue
+        const lft=jl=>jl?'-3.5px':'0px', rgt=jr=>jr?'-3.5px':'0px';
+        const rad=(jl,jr)=>(jl?'0':'4px')+' '+(jr?'0':'4px')+' '+(jr?'0':'4px')+' '+(jl?'0':'4px');
+        // Police la plus grande possible selon le nombre de lettres
+        const fsf=sh=>sh.length===1?'1.12rem':sh.length===2?'.88rem':'.66rem';
+        // Quart théorique non respecté (remplacement / absence / événement) → hachuré
+        const overridden=!!chg;
+        const theoBg=overridden?hatch(theoMeta.badge):theoMeta.badge;
+
+        // Contour coloré de la case selon le quart théorique (entoure tout le run)
+        const frameCol=(theoCode==='M'||theoCode==='APM'||theoCode==='N')?theoMeta.badge:null;
+
         return h('div',{key:i,className:cc,onClick:()=>open(d)},
+          frameCol&&h('div',{className:'cell-frame',style:Object.assign({borderRadius:rad(tjL,tjR),left:lft(tjL),right:rgt(tjR)},frameSides(frameCol,tjL,tjR))}),
           h('div',{className:'dn'},d.getDate()),
-          !trBadge&&h('div',{className:'pill-wrap'},
-            h('div',{className:'pill-abs',style:{background:s.badge,color:s.text,fontSize:s.fs,borderRadius:pr,left:pL,right:pRt}},s.short)
+          h('div',{className:'track'},
+            h('div',{className:'track-pill',style:Object.assign({background:theoBg,opacity:overridden?0.82:1,borderRadius:rad(tjL,tjR),left:lft(tjL),right:rgt(tjR)},pillBorder(theoMeta.badge,tjL,tjR))}),
+            theoRuns[i]>0&&h('span',{className:'run-lbl',style:{width:'calc('+(theoRuns[i]*100)+'% + '+((theoRuns[i]-1)*3)+'px)',color:theoMeta.text,fontSize:fsf(theoMeta.short)}},theoMeta.short)
           ),
-          trBadge&&h('div',{className:'badge-tr',style:{background:trBadge.bg,color:trBadge.col,fontSize:trBadge.fs}},trBadge.lbl),
-          showLbl&&h('div',{className:'repl-lbl',style:{background:s.badge,color:s.text}},s.short),
-          showLbl&&o&&o.note&&h('div',{className:'note-change'},o.note),
-          !showLbl&&o&&o.note&&h('div',{className:'note'},o.note)
+          h('div',{className:'track'},
+            chg&&h('div',{className:'track-pill',style:Object.assign({background:chg.bg,borderRadius:rad(cjL,cjR),left:lft(cjL),right:rgt(cjR)},pillBorder(chg.bg,cjL,cjR))}),
+            chg&&chgRuns[i]>0&&h('span',{className:'run-lbl',style:{width:'calc('+(chgRuns[i]*100)+'% + '+((chgRuns[i]-1)*3)+'px)',color:chg.col,fontSize:fsf(chg.short)}},chg.short)
+          ),
+          inM&&o&&o.note&&h('div',{className:'note'},o.note)
         );
       })
     ),
     modal&&h(Modal,{modal,ov,onSave:save,onClose:()=>setModal(null)}),
-    iscDetail&&h(IscDetail,{isc,hs,view,showEuros:isPaga,onClose:()=>setIscDetail(false)}),
+    iscDetail&&h(IscDetail,{isc,hs,ind,view,showEuros:isPaga,onClose:()=>setIscDetail(false)}),
     caDetail&&h(CaDetail,{ca,view,onClose:()=>setCaDetail(false)}),
     picker&&h(Picker,{view,onSelect:(y,m)=>{setView({y,m});setPicker(false);},onClose:()=>setPicker(false)})
   );
@@ -789,11 +777,8 @@ function BilanMensuel({view,allOv,onClose}){
   const allF=new Set([...getFeries(view.y-1),...getFeries(view.y),...getFeries(view.y+1)]);
   const data=TABS.map(t=>{
     const ov=allOv[t.id]||{};
-    const isc=calcISC(view,ov,allF);
-    const hs=calcHS(view,ov,allF)||0;
-    const ca=calcCA(view,ov);
-    const total=Math.round((isc.total+hs)*100)/100;
-    return{label:t.label,isPaga:t.isPaga,isc,hs,ca,total};
+    const mm=calcMonth(view,ov,allF);
+    return{label:t.label,isPaga:t.isPaga,isc:mm.isc,hs:mm.hs,ind:mm.ind,ca:mm.ca,total:mm.total};
   });
   const colHdr=(txt,col)=>h('div',{style:{textAlign:'right',paddingBottom:'6px'}},
     h('span',{style:{fontSize:'.72rem',fontWeight:700,color:col,textTransform:'uppercase',letterSpacing:'.08em'}},''),
@@ -807,39 +792,25 @@ function BilanMensuel({view,allOv,onClose}){
         h('div',{style:{fontSize:'.65rem',color:'#64748b',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'4px'}},MOIS[view.m]+' '+view.y),
         h('div',{style:{fontSize:'1.15rem',fontWeight:700,color:'#f1f5f9'}},'Bilan mensuel — Équipe')
       ),
-      data.map(({label,isPaga,isc,hs,ca,total},idx)=>{
+      data.map(({label,isPaga,isc,hs,ind,ca,total},idx)=>{
         const t=TABS[idx];
         return h('div',{key:label,style:{
-          padding:'12px 14px',borderRadius:'12px',
+          padding:'14px',borderRadius:'12px',
           background:t.bg,
           border:'1px solid '+t.border+'60',
           marginBottom:'8px',
         }},
-          // Top row: name + total
-          h('div',{style:{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:'8px'}},
-            h('span',{style:{fontSize:'1.15rem',fontWeight:700,color:t.color}},(label)),
-            h('div',{style:{display:'flex',alignItems:'baseline',gap:'4px'}},
-              h('span',{style:{fontSize:'1.5rem',fontWeight:700,color:'#f1f5f9'}},fmt2(total)),
-              h('span',{style:{fontSize:'.7rem',color:'#64748b'}},'h')
+          h('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}},
+            h('span',{style:{fontSize:'1.15rem',fontWeight:700,color:t.color,alignSelf:'center'}},(label)),
+            h('div',{style:{textAlign:'right'}},
+              h('div',{style:{display:'flex',alignItems:'baseline',gap:'4px',justifyContent:'flex-end'}},
+                h('span',{style:{fontSize:'1.7rem',fontWeight:700,color:'#f1f5f9'}},fmt2(total)),
+                h('span',{style:{fontSize:'.75rem',color:'#64748b'}},'h')
+              ),
+              h('div',{style:{fontSize:'.7rem',color:'#94a3b8',marginTop:'1px'}},'dont '+fmt2(isc.total)+' ISC')
             )
           ),
-          // Bottom row: ISC / HS / Absences
-          h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'6px',borderTop:'1px solid '+t.border+'30',paddingTop:'8px'}},
-            h('div',null,
-              h('div',{style:{fontSize:'.55rem',color:'#cbd5e1',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:'2px'}},'ISC'),
-              h('div',{style:{fontSize:'1rem',fontWeight:700,color:isc.total>0?'#f1f5f9':'#475569'}},fmt2(isc.total)),
-              isPaga&&isc.total>0&&h('div',{style:{fontSize:'.58rem',color:'#64748b'}},fmt2(isc.total*R)+'€')
-            ),
-            h('div',null,
-              h('div',{style:{fontSize:'.55rem',color:'#4ade80',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:'2px'}},'HS'),
-              h('div',{style:{fontSize:'1rem',fontWeight:700,color:hs>0?'#4ade80':'#334155'}},fmt2(hs)),
-              isPaga&&hs>0&&h('div',{style:{fontSize:'.58rem',color:'#64748b'}},fmt2(hs*R)+'€')
-            ),
-            h('div',null,
-              h('div',{style:{fontSize:'.55rem',color:'#fb923c',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:'2px'}},'Absences'),
-              h('div',{style:{fontSize:'1rem',fontWeight:700,color:ca>0?'#fb923c':'#334155'}},fmt2(ca))
-            )
-          )
+          ca>0&&h('div',{style:{fontSize:'.7rem',color:'#fb923c',marginTop:'8px',borderTop:'1px solid '+t.border+'30',paddingTop:'8px'}},'Absences : '+fmt2(ca)+' h')
         );
       }),
       h('button',{className:'bcanc',style:{width:'100%',marginTop:'6px'},onClick:onClose},'Fermer')
@@ -884,17 +855,17 @@ function BilanAnnuel({view,allOv,onClose}){
           onClick:e=>{e.stopPropagation();setSelTab(t.id);}
         },t.label))
       ),
-      h('div',{style:{display:'grid',gridTemplateColumns:'3.2rem 1fr 1fr 1fr',gap:'2px',paddingBottom:'7px',borderBottom:'1px solid #2d3139',marginBottom:'4px',flexShrink:0}},
+      h('div',{style:{display:'grid',gridTemplateColumns:'2.8rem 1fr 1fr 1fr',gap:'2px',paddingBottom:'7px',borderBottom:'1px solid #2d3139',marginBottom:'4px',flexShrink:0}},
         h('span',{style:{fontSize:'.6rem',color:'#6b7280',textTransform:'uppercase',letterSpacing:'.06em'}},'Mois'),
-        h('span',{style:{fontSize:'.6rem',color:'#8b949e',textTransform:'uppercase',letterSpacing:'.06em',textAlign:'right',fontWeight:600}},'ISC'),
-        h('span',{style:{fontSize:'.6rem',color:'#34d399',textTransform:'uppercase',letterSpacing:'.06em',textAlign:'right',fontWeight:600}},'HS'),
-        h('span',{style:{fontSize:'.6rem',color:'#fb923c',textTransform:'uppercase',letterSpacing:'.04em',textAlign:'right',fontWeight:600}},'Absences')
+        h('span',{style:{fontSize:'.6rem',color:'#f1f5f9',textTransform:'uppercase',letterSpacing:'.06em',textAlign:'right',fontWeight:600}},'Total'),
+        h('span',{style:{fontSize:'.6rem',color:'#8b949e',textTransform:'uppercase',letterSpacing:'.06em',textAlign:'right',fontWeight:600}},'dont ISC'),
+        h('span',{style:{fontSize:'.6rem',color:'#fb923c',textTransform:'uppercase',letterSpacing:'.04em',textAlign:'right',fontWeight:600}},'Abs')
       ),
       h('div',{style:{overflowY:'auto',flex:1,WebkitOverflowScrolling:'touch'}},
-        ann.months.map(({m,isc,hs,ca})=>{
+        ann.months.map(({m,isc,hs,ind,ca,total})=>{
           const isCur=m===view.m;
           return h('div',{key:m,style:{
-            display:'grid',gridTemplateColumns:'3.2rem 1fr 1fr 1fr',gap:'2px',
+            display:'grid',gridTemplateColumns:'2.8rem 1fr 1fr 1fr',gap:'2px',
             padding:isCur?'9px 6px':'8px 2px',
             borderRadius:isCur?'8px':'0',
             background:isCur?tab.bg:'transparent',
@@ -902,51 +873,33 @@ function BilanAnnuel({view,allOv,onClose}){
             borderBottom:isCur?'1px solid '+tab.border:'1px solid #1c1f26',
             marginBottom:'1px',
           }},
-            h('span',{style:{fontSize:'.82rem',fontWeight:isCur?700:500,color:isCur?tab.color:'#94a3b8',alignSelf:'center'}},MOIS_ABR[m]),
+            h('span',{style:{fontSize:'.78rem',fontWeight:isCur?700:500,color:isCur?tab.color:'#94a3b8',alignSelf:'center'}},MOIS_ABR[m]),
             h('div',{style:{textAlign:'right'}},
-              h('div',{style:{display:'flex',alignItems:'baseline',gap:'2px',justifyContent:'flex-end'}},
-                h('span',{style:{fontSize:'.95rem',fontWeight:600,color:isc.total>0?'#e2e8f0':'#4b5563'}},fmt2(isc.total)),
-                h('span',{style:{fontSize:'.54rem',color:'#6b7280'}},'h')
-              ),
-              tab.isPaga&&isc.total>0&&h('div',{style:{fontSize:'.56rem',color:'#6b7280'}},fmt2(isc.total*R)+'€')
+              h('span',{style:{fontSize:'.98rem',fontWeight:700,color:total>0?'#f1f5f9':'#4b5563'}},fmt2(total))
             ),
             h('div',{style:{textAlign:'right'}},
-              h('div',{style:{display:'flex',alignItems:'baseline',gap:'2px',justifyContent:'flex-end'}},
-                h('span',{style:{fontSize:'.95rem',fontWeight:600,color:hs>0?'#34d399':'#4b5563'}},fmt2(hs)),
-                h('span',{style:{fontSize:'.54rem',color:'#6b7280'}},'h')
-              ),
-              tab.isPaga&&hs>0&&h('div',{style:{fontSize:'.56rem',color:'#6b7280'}},fmt2(hs*R)+'€')
+              h('span',{style:{fontSize:'.85rem',fontWeight:500,color:isc.total>0?'#8b949e':'#4b5563'}},fmt2(isc.total))
             ),
             h('div',{style:{textAlign:'right'}},
-              h('div',{style:{display:'flex',alignItems:'baseline',gap:'2px',justifyContent:'flex-end'}},
-                h('span',{style:{fontSize:'.95rem',fontWeight:600,color:ca>0?'#fb923c':'#4b5563'}},fmt2(ca)),
-                h('span',{style:{fontSize:'.54rem',color:'#6b7280'}},'h')
-              )
+              h('span',{style:{fontSize:'.85rem',fontWeight:500,color:ca>0?'#fb923c':'#4b5563'}},fmt2(ca))
             )
           );
         })
       ),
-      h('div',{style:{display:'grid',gridTemplateColumns:'3.2rem 1fr 1fr 1fr',gap:'2px',paddingTop:'10px',borderTop:'1px solid #374151',marginTop:'4px',marginBottom:'14px',flexShrink:0}},
+      h('div',{style:{display:'grid',gridTemplateColumns:'2.8rem 1fr 1fr 1fr',gap:'2px',paddingTop:'10px',borderTop:'1px solid #374151',marginTop:'4px',marginBottom:'14px',flexShrink:0}},
         h('span',{style:{fontSize:'.7rem',fontWeight:700,color:'#f1f5f9',alignSelf:'center'}},'Total'),
         h('div',{style:{textAlign:'right'}},
           h('div',{style:{display:'flex',alignItems:'baseline',gap:'2px',justifyContent:'flex-end'}},
-            h('span',{style:{fontSize:'1rem',fontWeight:700,color:'#e2e8f0'}},fmt2(ann.isc.total)),
+            h('span',{style:{fontSize:'1.05rem',fontWeight:700,color:'#f1f5f9'}},fmt2(ann.total)),
             h('span',{style:{fontSize:'.54rem',color:'#6b7280'}},'h')
           ),
-          tab.isPaga&&h('div',{style:{fontSize:'.56rem',color:'#6b7280'}},fmt2(ann.isc.total*R)+'€')
+          tab.isPaga&&h('div',{style:{fontSize:'.56rem',color:'#6b7280'}},fmt2(ann.total*R)+'€')
         ),
         h('div',{style:{textAlign:'right'}},
-          h('div',{style:{display:'flex',alignItems:'baseline',gap:'2px',justifyContent:'flex-end'}},
-            h('span',{style:{fontSize:'1rem',fontWeight:700,color:'#34d399'}},fmt2(ann.hs)),
-            h('span',{style:{fontSize:'.54rem',color:'#6b7280'}},'h')
-          ),
-          tab.isPaga&&h('div',{style:{fontSize:'.56rem',color:'#6b7280'}},fmt2(ann.hs*R)+'€')
+          h('span',{style:{fontSize:'.9rem',fontWeight:600,color:'#8b949e'}},fmt2(ann.isc.total))
         ),
         h('div',{style:{textAlign:'right'}},
-          h('div',{style:{display:'flex',alignItems:'baseline',gap:'2px',justifyContent:'flex-end'}},
-            h('span',{style:{fontSize:'1rem',fontWeight:700,color:'#fb923c'}},fmt2(ann.ca)),
-            h('span',{style:{fontSize:'.54rem',color:'#6b7280'}},'h')
-          )
+          h('span',{style:{fontSize:'.9rem',fontWeight:600,color:'#fb923c'}},fmt2(ann.ca))
         )
       ),
       h('button',{className:'bcanc',style:{width:'100%',flexShrink:0},onClick:onClose},'Fermer')
@@ -954,10 +907,11 @@ function BilanAnnuel({view,allOv,onClose}){
   );
 }
 
-function IscDetail({isc,hs,view,showEuros,onClose}){
+function IscDetail({isc,hs,ind,view,showEuros,onClose}){
   const R=19.85;
   const fmt2=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const grandTotal=Math.round((isc.total+hs)*100)/100;
+  ind=ind||{total:0,rempl:0,ferie:0,credit:0,sup:0};
+  const grandTotal=Math.round((isc.total+hs+ind.total)*100)/100;
   const row=(label,val,color)=>h('div',{className:'detail-row'},
     h('div',{style:{flex:1}},
       h('div',{style:{fontSize:'.88rem',fontWeight:600,color:color||'#e2e8f0'}},label)
@@ -999,7 +953,27 @@ function IscDetail({isc,hs,view,showEuros,onClose}){
           row('Remplacements',isc.repl,'#60a5fa')
         ),
         h('div',{style:{borderTop:'1px solid #21262d',margin:'4px 0'}}),
-        row('Heures supp.',hs,'#34d399')
+        row('Heures supp.',hs,'#34d399'),
+        h('div',{style:{borderTop:'1px solid #21262d',margin:'4px 0'}}),
+        // Groupe Indemnités
+        h('div',{className:'detail-row',style:{alignItems:'center'}},
+          h('div',{style:{flex:1}},
+            h('div',{style:{fontSize:'1rem',fontWeight:700,color:'#a78bfa'}},'Indemnités')
+          ),
+          h('div',{style:{textAlign:'right'}},
+            h('div',{style:{display:'flex',alignItems:'baseline',gap:'3px',justifyContent:'flex-end'}},
+              h('span',{style:{fontSize:'1.3rem',fontWeight:700,color:'#a78bfa'}},fmt2(ind.total)),
+              h('span',{style:{fontSize:'.65rem',color:'#6b7280'}},'h')
+            ),
+            showEuros&&ind.total>0&&h('div',{style:{fontSize:'.65rem',color:'#475569',marginTop:'2px'}},fmt2(ind.total*R)+' €')
+          )
+        ),
+        ind.total>0&&h('div',{style:{paddingLeft:'12px',borderLeft:'2px solid #2d3139',marginLeft:'8px',marginTop:'2px'}},
+          ind.rempl>0&&row('Remplacement',ind.rempl,'#fbbf24'),
+          ind.ferie>0&&row('Férié',ind.ferie,'#fb923c'),
+          ind.credit>0&&row('Crédit férié',ind.credit,'#f472b6'),
+          ind.sup>0&&row('1er mai',ind.sup,'#f87171')
+        )
       ),
       h('div',{className:'detail-total'},
         h('span',{style:{fontSize:'.65rem',color:'#8b949e',fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase'}},'Total'),
