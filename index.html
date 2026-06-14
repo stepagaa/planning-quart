@@ -759,18 +759,16 @@ function Root(){
       if(server===null){setSyncState('err');return;}
       const merged={};
       TABS.forEach(t=>{
-        const online=server[t.id];
+        const online=server[t.id]||{};
         let local={};
         try{const r=localStorage.getItem(t.key);local=r?JSON.parse(r):{};}catch(e){}
-        if(online&&Object.keys(online).length){
-          // Le serveur fait foi → restaure en local
-          try{localStorage.setItem(t.key,JSON.stringify(online));}catch(e){}
-          merged[t.id]=online;
-        } else {
-          // Serveur vide pour cet agent : on garde le local et on l'envoie (première sauvegarde)
-          merged[t.id]=local;
-          if(Object.keys(local).length)syncPush(t.id,local);
-        }
+        const nOnline=Object.keys(online).length, nLocal=Object.keys(local).length;
+        // Fusion : union des deux, les données locales priment si plus complètes
+        const result=nLocal>nOnline ? {...online,...local} : {...local,...online};
+        try{localStorage.setItem(t.key,JSON.stringify(result));}catch(e){}
+        merged[t.id]=result;
+        // Si local avait plus de données → pousser la version fusionnée vers le serveur
+        if(nLocal>nOnline&&nLocal>0) syncPush(t.id,result);
       });
       setAllOv(merged);
       window.dispatchEvent(new Event('sync-pulled'));
