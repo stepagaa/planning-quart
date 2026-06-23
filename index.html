@@ -175,6 +175,15 @@ const FERIE_IND={jour:1.75, nuit:2.25};
 const IND_REMPL={M:1.5, APM:1.75, N:2};
 const DUREE={M:6.75, APM:8, N:10};
 
+// Remplacement sur J/V : heures théoriques dues (HS calculé sur le dépassement)
+const JV_THEO={E:7.5, 'E/':3.75};   // E=J, E/=V
+// Indemnité de décalage horaire (heures hors plage prévue) : [quart effectué][théo J ou V]
+const IND_DECAL={
+  M:  {E:1.375, 'E/':0},
+  APM:{E:2.125, 'E/':1.875},
+  N:  {E:7.5,   'E/':3.75},
+};
+
 // Dates de référence pour le décalage ISC remplacement
 const REF_SEM=new Date(2025,0,8);  // mercredi
 const REF_SAM=new Date(2025,0,4);  // samedi
@@ -241,6 +250,20 @@ function hsShiftBands(d, shift, feries){
   return t;
 }
 
+// HS quand le quart théorique est un J/V : on retranche d'abord les heures dues
+// (7,5h pour J, 3,75h pour V) en partant du début du quart, chaque heure restante
+// gardant son taux réel (nuit 20h–06h majorée, jour sinon).
+function hsShiftBandsJV(d, shift, feries, dueHours){
+  const iv=shiftInterval(d, shift); if(!iv) return 0;
+  let remain=dueHours, t=0;
+  for(const sg of workSegments(iv.start, iv.end)){
+    let h=sg.hours;
+    if(remain>0){ const cut=Math.min(remain, h); remain-=cut; h-=cut; }
+    if(h>0) t += h * HS_RATE[sg.band][dateType(sg.date, feries)];
+  }
+  return t;
+}
+
 // Indemnité férié (quart théorique travaillé) : heures tombant sur un férié
 function indemniteFerie(d, shift, feries){
   const iv=shiftInterval(d, shift); if(!iv) return 0;
@@ -250,21 +273,21 @@ function indemniteFerie(d, shift, feries){
 }
 
 // Quart effectivement travaillé un jour (remplacement prioritaire, sinon quart théo M/APM/N)
-function effShift(d, ov, agentId){
+function effShift(d, ov){
   const o=ov[dkey(d)];
   if(o&&o.absent) return null;
   if(o&&o.repl) return o.repl;
-  const theo=(o&&o.manShift)||getEffShiftCode(d,agentId);
+  const theo=(o&&o.manShift)||getEffShiftCode(d);
   return (theo==='M'||theo==='APM'||theo==='N')?theo:null;
 }
 
 // Heures réellement travaillées sur la journée D (00:00–24:00), queue de nuit de la veille incluse
-function workedHoursOnDate(D, ov, agentId){
+function workedHoursOnDate(D, ov){
   const dayStart=new Date(D); dayStart.setHours(0,0,0,0);
   const dayEnd=new Date(dayStart); dayEnd.setDate(dayEnd.getDate()+1);
   let t=0;
   [addDays(D,-1), D].forEach(day=>{
-    const sh=effShift(day, ov, agentId); if(!sh) return;
+    const sh=effShift(day, ov); if(!sh) return;
     const iv=shiftInterval(day, sh); if(!iv) return;
     const a=Math.max(iv.start, dayStart), b=Math.min(iv.end, dayEnd);
     if(b>a) t += (b-a)/3600000;
@@ -273,24 +296,35 @@ function workedHoursOnDate(D, ov, agentId){
 }
 
 // Détail d'un jour : toutes les composantes
-function calcDay(d, ov, feries, agentId){
+function calcDay(d, ov, feries){
   const o=ov[dkey(d)];
-  const res={iscTh:0, iscRe:0, hs:0, indRempl:0, indFerie:0, credit:0, sup:0, ca:0};
-  if(!agentPhase(agentId,d).active) return res;
-  if(o&&(o.absent||o.absenceType)){ res.ca=(DUREE[getShift(d,agentId)]||0); return res; }
-  const theo=(o&&o.manShift)||getEffShiftCode(d,agentId);
+  const res={iscTh:0, iscRe:0, hs:0, indRempl:0, indDecal:0, indFerie:0, credit:0, sup:0, ca:0};
+  if(o&&(o.absent||o.absenceType)){ res.ca=(DUREE[getShift(d)]||0); return res; }
+  const theo=(o&&o.manShift)||getEffShiftCode(d);
   const isFerie=feries.has(dkey(d));
   const is1Mai=dkey(d).endsWith('-05-01');
   const theoWorked=(theo==='M'||theo==='APM'||theo==='N');
   const theoRepos=(theo==='RAH'||theo==='RH');
+  const theoJV=(theo==='E'||theo==='E/');   // J ou V
 
   if(theoWorked) res.iscTh += iscShiftBands(d, theo, feries);
   if(isFerie && theoWorked) res.indFerie += indemniteFerie(d, theo, feries);
 
   if(o&&o.repl){
-    res.iscRe += iscRemplBands(d, o.repl, feries);
-    res.hs += hsShiftBands(d, o.repl, feries);
-    res.indRempl += (IND_REMPL[o.repl]||0);
+    if(theoJV){
+      // Remplacement sur un J/V :
+      // - ISC calculé comme un jour normal (PAS de décalage d'un cran)
+      // - HS sur le dépassement des heures dues
+      // - pas d'IND_REMPL, mais indemnité de décalage horaire
+      res.iscRe += iscShiftBands(d, o.repl, feries);
+      const due=JV_THEO[theo]||0;
+      res.hs += hsShiftBandsJV(d, o.repl, feries, due);
+      res.indDecal += (IND_DECAL[o.repl] && IND_DECAL[o.repl][theo])||0;
+    } else {
+      res.iscRe += iscRemplBands(d, o.repl, feries);
+      res.hs += hsShiftBands(d, o.repl, feries);
+      res.indRempl += (IND_REMPL[o.repl]||0);
+    }
   }
 
   if(o&&o.event==='formation' && theoRepos){
@@ -298,52 +332,52 @@ function calcDay(d, ov, feries, agentId){
   }
 
   if(isFerie){
-    if(theoRepos){ res.credit += 7; if(o&&o.repl) res.credit += workedHoursOnDate(d, ov, agentId); }
-    else if(theoWorked){ res.credit += workedHoursOnDate(d, ov, agentId); }
+    if(theoRepos){ res.credit += 7; if(o&&o.repl) res.credit += workedHoursOnDate(d, ov); }
+    else if(theoWorked){ res.credit += workedHoursOnDate(d, ov); }
   }
 
   if(is1Mai){
-    let w=workedHoursOnDate(d, ov, agentId);
+    let w=workedHoursOnDate(d, ov);
     if(o&&o.event==='formation'&&theoRepos) w+=7;
     res.sup += w;
   }
   return res;
 }
 
-function calcMonth(view, ov, feries, agentId){
+function calcMonth(view, ov, feries){
   const last=new Date(view.y, view.m+1, 0);
-  let iscTh=0,iscRe=0,hs=0,indRempl=0,indFerie=0,credit=0,sup=0,ca=0;
+  let iscTh=0,iscRe=0,hs=0,indRempl=0,indDecal=0,indFerie=0,credit=0,sup=0,ca=0;
   for(let day=1; day<=last.getDate(); day++){
-    const x=calcDay(new Date(view.y,view.m,day), ov, feries, agentId);
-    iscTh+=x.iscTh; iscRe+=x.iscRe; hs+=x.hs; indRempl+=x.indRempl; indFerie+=x.indFerie; credit+=x.credit; sup+=x.sup; ca+=x.ca;
+    const x=calcDay(new Date(view.y,view.m,day), ov, feries);
+    iscTh+=x.iscTh; iscRe+=x.iscRe; hs+=x.hs; indRempl+=x.indRempl; indDecal+=x.indDecal||0; indFerie+=x.indFerie; credit+=x.credit; sup+=x.sup; ca+=x.ca;
   }
   const r=v=>Math.round(v*100)/100;
-  const iscTotal=r(iscTh+iscRe), indTotal=r(indRempl+indFerie+credit+sup);
+  const iscTotal=r(iscTh+iscRe), indTotal=r(indRempl+indDecal+indFerie+credit+sup);
   return {
     isc:{total:iscTotal, th:r(iscTh), repl:r(iscRe)},
     hs:r(hs),
-    ind:{total:indTotal, rempl:r(indRempl), ferie:r(indFerie), credit:r(credit), sup:r(sup)},
+    ind:{total:indTotal, rempl:r(indRempl), decal:r(indDecal), ferie:r(indFerie), credit:r(credit), sup:r(sup)},
     ca:r(ca),
     total:r(iscTotal+hs+indTotal),
   };
 }
 
 // Wrappers compatibles affichage
-function calcISC(view, ov, feries, agentId){ return calcMonth(view, ov, feries, agentId).isc; }
-function calcHS(view, ov, feries, agentId){ return calcMonth(view, ov, feries, agentId).hs; }
-function calcInd(view, ov, feries, agentId){ return calcMonth(view, ov, feries, agentId).ind; }
-function calcCA(view, ov, agentId){
+function calcISC(view, ov, feries){ return calcMonth(view, ov, feries).isc; }
+function calcHS(view, ov, feries){ return calcMonth(view, ov, feries).hs; }
+function calcInd(view, ov, feries){ return calcMonth(view, ov, feries).ind; }
+function calcCA(view, ov){
   const f=new Set([...getFeries(view.y-1),...getFeries(view.y),...getFeries(view.y+1)]);
-  return calcMonth(view, ov, f, agentId).ca;
+  return calcMonth(view, ov, f).ca;
 }
 
-function calcAnnuel(year, ov, agentId){
+function calcAnnuel(year, ov){
   const allF=new Set([...getFeries(year-1),...getFeries(year),...getFeries(year+1)]);
   const r=v=>Math.round(v*100)/100;
   let isc={total:0,th:0,repl:0}, hs=0, ind={total:0,rempl:0,ferie:0,credit:0,sup:0}, ca=0;
   const months=[];
   for(let m=0;m<12;m++){
-    const mm=calcMonth({y:year,m}, ov, allF, agentId);
+    const mm=calcMonth({y:year,m}, ov, allF);
     months.push({m, isc:mm.isc, hs:mm.hs, ind:mm.ind, ca:mm.ca, total:mm.total});
     isc.total=r(isc.total+mm.isc.total); isc.th=r(isc.th+mm.isc.th); isc.repl=r(isc.repl+mm.isc.repl);
     hs=r(hs+mm.hs);
@@ -357,34 +391,13 @@ const MOIS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","
 const JOURS=["L","M","M","J","V","S","D"];
 const REF=new Date(2025,11,26);
 
-// ── Démarrage & phases par agent ───────────────────────────────────
-// Planning global à partir du 1er janvier 2026 (pas d'historique avant).
-const GLOBAL_START=new Date(2026,0,1);
-// Cesari : intègre l'équipe le 1er juin 2026.
-const AGENT_START={cesa2:new Date(2026,5,1)};
-// Serpaggi : avant le 22 avril 2026, ancien roulement = même cycle décalé de +28 j
-// (réf 28/11/2025) → jeudi 1er janvier 2026 = J (pos 34), vendredi 2 = V (pos 35).
-const SERP_REF=new Date(2025,10,28);
-const SERP_CUTOVER=new Date(2026,3,22);
-
 function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function dkey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function sharedPos(d){return((Math.round((d-REF)/86400000)%42)+42)%42;}
-// Phase d'un agent à une date : {active, pos cycle, entretien (conversions auto rose/été)}
-function agentPhase(agentId,d){
-  const start=AGENT_START[agentId]||GLOBAL_START;
-  if(d<start) return {active:false,pos:-1,entretien:false};
-  if(agentId==='serp2' && d<SERP_CUTOVER){
-    const pos=((Math.round((d-SERP_REF)/86400000)%42)+42)%42;
-    return {active:true,pos,entretien:false};
-  }
-  return {active:true,pos:sharedPos(d),entretien:true};
-}
-function getShift(d,agentId){const ph=agentPhase(agentId,d);return ph.active?ROULEMENT[Math.floor(ph.pos/7)][ph.pos%7]:null;}
-function cyclePos(d,agentId){const ph=agentPhase(agentId,d);return ph.active?ph.pos:-1;}
-function isRahConvertible(d,agentId){const p=cyclePos(d,agentId);return p===38||p===39;}
-function isJConvertible(d,agentId){const p=cyclePos(d,agentId);return p===33||p===34;}
-function isVConvertible(d,agentId){const p=cyclePos(d,agentId);return p===35;}
+function getShift(d){const diff=Math.round((d-REF)/86400000),pos=((diff%42)+42)%42;return ROULEMENT[Math.floor(pos/7)][pos%7];}
+function cyclePos(d){return((Math.round((d-REF)/86400000)%42)+42)%42;}
+function isRahConvertible(d){const p=cyclePos(d);return p===38||p===39;}
+function isJConvertible(d){const p=cyclePos(d);return p===33||p===34;}
+function isVConvertible(d){const p=cyclePos(d);return p===35;}
 
 // ── Semaines d'entretien ──────────────────────────────────────────
 // Positions modifiables dans le cycle : 33,34 (J), 35 (V), 38,39 (Lun/Mar Sem6)
@@ -419,34 +432,32 @@ function getEntretienTypes(year){
 
 function getEntretienAnchorOf(d){
   // Retourne la date d'ancre (Ven V) de la période d'entretien contenant d
-  return addDays(d,35-sharedPos(d));
+  return addDays(d,35-cyclePos(d));
 }
 
 // Code de quart effectif (pour les calculs)
-function getEffShiftCode(d,agentId){
-  const ph=agentPhase(agentId,d);
-  if(!ph.active) return null;
-  const raw=ROULEMENT[Math.floor(ph.pos/7)][ph.pos%7];
-  if(!ph.entretien || !ENT_POS.has(ph.pos)) return raw;
+function getEffShiftCode(d){
+  const raw=getShift(d);
+  const pos=cyclePos(d);
+  if(!ENT_POS.has(pos))return raw;
   const anchor=getEntretienAnchorOf(d);
   const types=getEntretienTypes(anchor.getFullYear());
   const ak=dkey(anchor);
   if(types.pink.has(ak)) return 'RAH';
-  if(types.summer.has(ak)&&(ph.pos===35||ph.pos===38||ph.pos===39)) return 'E';
+  if(types.summer.has(ak)&&(pos===35||pos===38||pos===39)) return 'E';
   return raw;
 }
 
 // Meta visuelle du quart (inclut le rose pour les semaines roses)
-function getEffShiftMeta(d,agentId){
-  const ph=agentPhase(agentId,d);
-  if(!ph.active) return null;
-  const raw=ROULEMENT[Math.floor(ph.pos/7)][ph.pos%7];
-  if(!ph.entretien || !ENT_POS.has(ph.pos)) return SHIFT[raw]||SHIFT.RAH;
+function getEffShiftMeta(d){
+  const raw=getShift(d);
+  const pos=cyclePos(d);
+  if(!ENT_POS.has(pos))return SHIFT[raw]||SHIFT.RAH;
   const anchor=getEntretienAnchorOf(d);
   const types=getEntretienTypes(anchor.getFullYear());
   const ak=dkey(anchor);
   if(types.pink.has(ak)) return {badge:'#f699cd',text:'#1e293b',short:'RAH',label:'Repos rose',fs:'.54rem'};
-  if(types.summer.has(ak)&&(ph.pos===35||ph.pos===38||ph.pos===39)) return SHIFT['E']||SHIFT.RAH;
+  if(types.summer.has(ak)&&(pos===35||pos===38||pos===39)) return SHIFT['E']||SHIFT.RAH;
   return SHIFT[raw]||SHIFT.RAH;
 }
 
@@ -463,12 +474,15 @@ function pillBorder(h,jl,jr){const c=borderCol(h);return{borderTop:'1px solid '+
 // Détail des segments ISC pour affichage (théorique ou remplacement +1 cran)
 function iscSegsDetail(d, shift, feries, bumped=false){
   try{
-    const interval=shiftInterval(d,shift);
+    // Pour le remplacement, calculer sur la même date de référence bumpée
+    // que iscRemplBands (sem→REF_SAM, sam/dim→REF_DIM) pour coller au total réel.
+    const refDate=bumped?bumpRef(d,feries):d;
+    const useFeries=bumped?NO_FERIES:feries;
+    const interval=shiftInterval(refDate,shift);
     const segs=workSegments(interval.start,interval.end);
     const map={};
     segs.forEach(s=>{
-      const dt0=dateType(s.date,feries);
-      const dt=bumped?(dt0==='sem'?'sam':'dim'):dt0;
+      const dt=dateType(s.date,useFeries);
       const k=s.band+'-'+dt;
       if(!map[k])map[k]={hours:0,band:s.band,dt,rate:ISC_RATE[s.band][dt],isc:0};
       map[k].hours+=s.hours; map[k].isc+=s.hours*ISC_RATE[s.band][dt];
@@ -476,16 +490,20 @@ function iscSegsDetail(d, shift, feries, bumped=false){
     return Object.values(map).map(g=>({hours:Math.round(g.hours*100)/100,band:g.band,dt:g.dt,rate:g.rate,isc:Math.round(g.isc*1000)/1000}));
   }catch(e){return[];}
 }
-function hsSegsDetail(d, shift, feries){
+function hsSegsDetail(d, shift, feries, dueHours){
   try{
     const interval=shiftInterval(d,shift);
     const segs=workSegments(interval.start,interval.end);
+    let remain=dueHours||0;
     const map={};
     segs.forEach(s=>{
+      let h=s.hours;
+      if(remain>0){ const cut=Math.min(remain,h); remain-=cut; h-=cut; }
+      if(h<=0)return;
       const dt=dateType(s.date,feries);
       const k=s.band+'-'+dt;
       if(!map[k])map[k]={hours:0,band:s.band,dt,rate:HS_RATE[s.band][dt],hs:0};
-      map[k].hours+=s.hours; map[k].hs+=s.hours*HS_RATE[s.band][dt];
+      map[k].hours+=h; map[k].hs+=h*HS_RATE[s.band][dt];
     });
     return Object.values(map).map(g=>({hours:Math.round(g.hours*100)/100,band:g.band,dt:g.dt,rate:g.rate,hs:Math.round(g.hs*1000)/1000}));
   }catch(e){return[];}
@@ -493,14 +511,16 @@ function hsSegsDetail(d, shift, feries){
 
 function CalcDetailModal({dd,date,theo,repl,event,feries,onClose}){
   const f=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+dd.indFerie+dd.credit+dd.sup)*100)/100;
+  const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+(dd.indDecal||0)+dd.indFerie+dd.credit+dd.sup)*100)/100;
   const DT={'sem':'Semaine','sam':'Samedi','dim':'Dim/JF'};
   const SL={M:'Matin',APM:'Après-midi',N:'Nuit'};
   const BL={jour:'Jour',nuit:'Nuit'};
   const theoWorked=theo==='M'||theo==='APM'||theo==='N';
+  const theoJV=theo==='E'||theo==='E/';
+  const JVDUE={E:7.5,'E/':3.75};
   const theoSegs=theoWorked?iscSegsDetail(date,theo,feries):[];
-  const replSegs=repl?iscSegsDetail(date,repl,feries,true):[];
-  const hsSegs=repl?hsSegsDetail(date,repl,feries):[];
+  const replSegs=repl?iscSegsDetail(date,repl,feries,!theoJV):[];
+  const hsSegs=repl?hsSegsDetail(date,repl,feries,theoJV?JVDUE[theo]:0):[];
   const dl=date.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 
   const Section=({label,color,children})=>h('div',{style:{marginTop:'14px'}},
@@ -536,7 +556,7 @@ function CalcDetailModal({dd,date,theo,repl,event,feries,onClose}){
 
       // ISC remplacement
       repl&&replSegs.length>0&&h(Section,{label:'ISC remplacement · '+SL[repl],color:'#c084fc'},
-        replSegs.map((s,i)=>h(Row,{key:i,label:BL[s.band]+' · '+DT[s.dt]+' (+1 cran)',formula:f(s.hours)+'h × '+(s.rate*100).toFixed(0)+'%',val:s.isc,color:'#d8b4fe'})),
+        replSegs.map((s,i)=>h(Row,{key:i,label:BL[s.band]+' · '+DT[s.dt]+(theoJV?'':' (+1 cran)'),formula:f(s.hours)+'h × '+(s.rate*100).toFixed(0)+'%',val:s.isc,color:'#d8b4fe'})),
         replSegs.length>1&&h(Row,{label:'Sous-total ISC',val:dd.iscRe,color:'#e9d5ff',bold:false})
       ),
 
@@ -549,6 +569,11 @@ function CalcDetailModal({dd,date,theo,repl,event,feries,onClose}){
       // Indemnité remplacement
       repl&&dd.indRempl>0&&h(Section,{label:'Indemnité remplacement',color:'#fbbf24'},
         h(Row,{label:'Forfait '+SL[repl],formula:'Montant fixe conventionnel',val:dd.indRempl,color:'#fde68a'})
+      ),
+
+      // Indemnité de décalage horaire (remplacement sur J/V)
+      repl&&dd.indDecal>0&&h(Section,{label:'Indemnité décalage horaire',color:'#fbbf24'},
+        h(Row,{label:SL[repl]+' sur '+(theo==='E'?'J':'V'),formula:'Heures hors plage prévue',val:dd.indDecal,color:'#fde68a'})
       ),
 
       // Jour férié
@@ -578,12 +603,12 @@ function CalcDetailModal({dd,date,theo,repl,event,feries,onClose}){
   );
 }
 
-function Modal({modal,ov,onSave,onClose,agentId}){
+function Modal({modal,ov,onSave,onClose}){
   const key=dkey(modal.date),ex=ov[key],raw=modal.shift;
   const s=modal.meta||SHIFT[raw]||SHIFT.RAH;
-  const canToRah=isJConvertible(modal.date,agentId)||isVConvertible(modal.date,agentId)||isRahConvertible(modal.date,agentId);
-  const canToJ=isRahConvertible(modal.date,agentId)||isVConvertible(modal.date,agentId);
-  const canToV=isRahConvertible(modal.date,agentId)||isJConvertible(modal.date,agentId);
+  const canToRah=isJConvertible(modal.date)||isVConvertible(modal.date)||isRahConvertible(modal.date);
+  const canToJ=isRahConvertible(modal.date)||isVConvertible(modal.date);
+  const canToV=isRahConvertible(modal.date)||isJConvertible(modal.date);
   // State — migration from old format
   const initAbsType=ex?(ex.absent?'CA':ex.absenceType||(ex.event==='hp'?'HP':null)):null;
   const initEvent=ex?(ex.event==='reunion'||ex.event==='rs'?'reunion':ex.event==='cph'||ex.event==='bj'?'cph':ex.event==='formation'?'formation':null):null;
@@ -607,9 +632,9 @@ function Modal({modal,ov,onSave,onClose,agentId}){
   if(manShift)draft.manShift=manShift;
   const tempOv={...ov};
   if(Object.keys(draft).length)tempOv[key]=draft; else delete tempOv[key];
-  const dd=calcDay(modal.date,tempOv,modalFeries,agentId);
+  const dd=calcDay(modal.date,tempOv,modalFeries);
   const f2=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+dd.indFerie+dd.credit+dd.sup)*100)/100;
+  const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+(dd.indDecal||0)+dd.indFerie+dd.credit+dd.sup)*100)/100;
   const iscPart=Math.round((dd.iscTh+dd.iscRe)*100)/100;
   const save=()=>{
     const data={};
@@ -919,10 +944,10 @@ function App({storageKey,agentId,isPaga,tabLabel,tabColor,onViewChange,onSynced,
   const off=first.getDay()===0?6:first.getDay()-1;
   const cells=Array.from({length:Math.ceil((off+new Date(view.y,view.m+1,0).getDate())/7)*7},(_,i)=>addDays(addDays(first,-off),i));
   const allFeries=new Set([...getFeries(view.y-1),...getFeries(view.y),...getFeries(view.y+1)]);
-  const month=calcMonth(view,ov,allFeries,agentId);
+  const month=calcMonth(view,ov,allFeries);
   const isc=month.isc,hs=month.hs,ind=month.ind,ca=month.ca;
 
-  const open=d=>{if(d.getMonth()!==view.m||!agentPhase(agentId,d).active)return;setModal({date:d,shift:getEffShiftCode(d,agentId),meta:getEffShiftMeta(d,agentId)});};
+  const open=d=>{if(d.getMonth()!==view.m)return;setModal({date:d,shift:getEffShiftCode(d),meta:getEffShiftMeta(d)});};
   const save=(data,numDays)=>{
     const next={...ov};
     const nd=numDays||1;
@@ -948,22 +973,15 @@ function App({storageKey,agentId,isPaga,tabLabel,tabColor,onViewChange,onSynced,
     h('div',{className:'dow'},JOURS.map((j,i)=>h('div',{key:i,className:'dh'},j))),
     h('div',{className:'grid',style:{borderRadius:'8px',outline:'3px solid '+(tabColor||'#2563eb'),outlineOffset:'5px'}},
       cells.map((d,i)=>{
-        const inM=d.getMonth()===view.m,key=dkey(d),o=ov[key];
-        const ph=agentPhase(agentId,d);
-        if(inM&&!ph.active){
-          return h('div',{key:i,className:'cell',style:{opacity:.2,pointerEvents:'none',background:'#0c0d10',border:'1px solid rgba(255,255,255,0.03)'}},
-            h('div',{className:'dn',style:{background:'#15171c',color:'#3a4150',boxShadow:'none'}},h('span',null,d.getDate()))
-          );
-        }
-        const raw=getShift(d,agentId);
+        const inM=d.getMonth()===view.m,key=dkey(d),raw=getShift(d),o=ov[key];
         const isAbs=o&&(o.absent||o.absenceType);
         const replMeta=(o&&o.repl)?REPL[o.repl]:null;
         const chg=inM?getChangeMeta(o):null;
         const isToday=key===tk,isFerie=allFeries.has(key);
         const dow=d.getDay(),isWE=dow===0||dow===6;
         const cc='cell'+(!inM?' out':'')+(isToday?' today':'')+(isFerie&&inM?' ferie':isWE&&inM?' weekend':'');
-        const theoAutoMeta=inM?getEffShiftMeta(d,agentId):SHIFT[raw]||SHIFT.RAH;
-        const theoCode=(o&&o.manShift)||(inM?getEffShiftCode(d,agentId):raw);
+        const theoAutoMeta=inM?getEffShiftMeta(d):SHIFT[raw]||SHIFT.RAH;
+        const theoCode=(o&&o.manShift)||(inM?getEffShiftCode(d):raw);
         const theoMeta=(o&&o.manShift)?(SHIFT[o.manShift]||SHIFT.RAH):theoAutoMeta;
 
         const fsf=sh=>sh.length===1?'.82rem':sh.length===2?'.66rem':'.52rem';
@@ -989,7 +1007,7 @@ function App({storageKey,agentId,isPaga,tabLabel,tabColor,onViewChange,onSynced,
         );
       })
     ),
-    modal&&h(Modal,{modal,ov,onSave:save,onClose:()=>setModal(null),agentId}),
+    modal&&h(Modal,{modal,ov,onSave:save,onClose:()=>setModal(null)}),
     picker&&h(Picker,{view,onSelect:(y,m)=>{setView({y,m});setPicker(false);},onClose:()=>setPicker(false)})
   );
 }
@@ -1000,7 +1018,7 @@ function BilanMensuel({view,allOv,onClose}){
   const allF=new Set([...getFeries(view.y-1),...getFeries(view.y),...getFeries(view.y+1)]);
   const data=TABS.map(t=>{
     const ov=allOv[t.id]||{};
-    const mm=calcMonth(view,ov,allF,t.id);
+    const mm=calcMonth(view,ov,allF);
     return{label:t.label,isPaga:t.isPaga,isc:mm.isc,hs:mm.hs,ind:mm.ind,ca:mm.ca,total:mm.total,tab:t,ov};
   });
   const [detail,setDetail]=useState(null);
@@ -1052,10 +1070,10 @@ function BilanAgentDetail({detail,view,allF,fmt2,R,onClose}){
     const d=new Date(view.y,view.m,day);
     const key=dkey(d);
     const o=ov[key]||null;
-    const dd=calcDay(d,ov,allF,tab.id);
-    const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+dd.indFerie+dd.credit+dd.sup)*100)/100;
+    const dd=calcDay(d,ov,allF);
+    const tot=Math.round((dd.iscTh+dd.iscRe+dd.hs+dd.indRempl+(dd.indDecal||0)+dd.indFerie+dd.credit+dd.sup)*100)/100;
     if(tot<=0&&dd.ca<=0)continue;
-    const theo=(o&&o.manShift)||getEffShiftCode(d,tab.id);
+    const theo=(o&&o.manShift)||getEffShiftCode(d);
     const isFerie=allF.has(key);
     const dow=JOURS_ABR[d.getDay()];
     let desc,color;
@@ -1129,7 +1147,7 @@ function BilanAnnuel({view,allOv,onClose}){
   const [selTab,setSelTab]=useState(TABS[0].id);
   const tab=TABS.find(t=>t.id===selTab);
   const ov=allOv[selTab]||{};
-  const ann=calcAnnuel(view.y,ov,selTab);
+  const ann=calcAnnuel(view.y,ov);
 
   const ColH=({label,color,right})=>h('div',{style:{fontSize:'.52rem',fontWeight:700,color:color||'#475569',letterSpacing:'.1em',textTransform:'uppercase',textAlign:right?'right':'left'}},label);
 
